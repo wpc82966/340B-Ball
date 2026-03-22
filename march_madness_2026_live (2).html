@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>March Madness 2026 · Live Scores</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a24;
+  --card:#1e1e2a;--card2:#252533;
+  --bdr:rgba(255,255,255,0.08);--bdr2:rgba(255,255,255,0.14);
+  --red:#CC0000;--gold:#F0B429;--green:#22AA44;--blue:#3399FF;
+  --txt:#ffffff;--txt2:#aaaacc;--txt3:#666688;
+  --win-bg:rgba(34,170,68,0.15);--live-bg:rgba(204,0,0,0.18);
+  --sched-bg:rgba(255,255,255,0.04);
+}
+body{background:var(--bg);color:var(--txt);font-family:'Barlow Condensed',sans-serif;font-size:15px;min-height:100vh}
+button{font-family:'Barlow Condensed',sans-serif;cursor:pointer;border:none}
+.hidden{display:none!important}
+
+/* HEADER */
+.hdr{background:var(--bg2);border-bottom:3px solid var(--red);padding:0 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.6)}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:10px 0}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.1em;color:var(--txt)}
+.logo span{color:var(--red)}
+.logo-sub{font-size:10px;color:var(--txt3);letter-spacing:.18em;margin-top:1px}
+.tog{display:flex;border:1.5px solid var(--bdr2);border-radius:5px;overflow:hidden}
+.tog-btn{padding:7px 20px;font-weight:800;font-size:13px;letter-spacing:.1em;transition:all .2s}
+.tog-btn.on{background:var(--red);color:#fff}
+.tog-btn.off{background:transparent;color:var(--txt3)}
+.tog-btn.off:hover{background:rgba(255,255,255,0.06)}
+.hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.refresh-badge{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:5px;font-size:11px;font-weight:700;letter-spacing:.08em;border:1.5px solid var(--bdr);cursor:default;white-space:nowrap}
+.refresh-badge.auto{color:#44dd44;border-color:rgba(68,221,68,0.35);background:rgba(68,221,68,0.08)}
+.refresh-badge.offhrs{color:#aaa;border-color:rgba(255,255,255,0.15);background:rgba(255,255,255,0.04)}
+.rdot{width:6px;height:6px;border-radius:50%;background:#44dd44;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.refresh-btn{padding:6px 14px;border:1.5px solid var(--bdr2);border-radius:5px;background:transparent;color:var(--txt2);font-size:12px;font-weight:700;letter-spacing:.08em;transition:all .15s}
+.refresh-btn:hover{border-color:var(--red);color:var(--red)}
+.countdown{font-size:11px;color:var(--txt3);font-family:'Inter',sans-serif;white-space:nowrap}
+
+/* SCORE BAR */
+.score-bar{background:#111118;border-bottom:2px solid var(--red);height:40px;display:flex;align-items:center;padding:0 14px;gap:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none}
+.score-bar::-webkit-scrollbar{display:none}
+.sb-lbl{background:var(--red);color:#fff;padding:3px 9px;font-size:10px;font-weight:800;letter-spacing:.12em;border-radius:2px;flex-shrink:0;margin-right:14px}
+.sb-game{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:0 14px 0 0;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.1);margin-right:14px}
+.sb-game:last-child{border-right:none;margin-right:0}
+.sb-live-dot{color:#ff4444;font-size:10px;font-weight:800;animation:pulse 1.5s infinite}
+.sb-fin{color:#44cc66;font-size:10px;font-weight:800;letter-spacing:.06em}
+.sb-sched{color:#aaa;font-size:10px;font-weight:600}
+.sb-score{font-weight:800;font-size:14px;color:var(--gold);letter-spacing:.04em}
+.sb-team{color:#ddd;font-size:13px;font-weight:500}
+.sb-team.w{color:#fff;font-weight:800}
+
+/* TABS */
+.tabs{background:#1a1a24;border-bottom:2px solid rgba(255,255,255,0.1);padding:0 14px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;min-height:46px;align-items:stretch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:12px 20px;font-weight:700;font-size:14px;letter-spacing:.1em;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;cursor:pointer;user-select:none;display:flex;align-items:center;gap:5px}
+.tab.on{color:#fff;border-bottom-color:var(--red);background:rgba(204,0,0,0.08)}
+.tab:hover:not(.on){color:#ccc;background:rgba(255,255,255,0.05)}
+.tab-badge{font-size:10px;color:var(--gold);background:rgba(240,180,41,0.15);padding:1px 6px;border-radius:10px;font-weight:700}
+
+/* BRACKET */
+.bracket-page{overflow-x:auto;overflow-y:visible;padding:12px 14px 60px}
+.bracket-cols{display:flex;gap:4px;min-width:max-content;align-items:flex-start}
+.round-col{width:172px;flex-shrink:0}
+.round-hdr{text-align:center;padding:6px 4px 10px;font-size:10px;font-weight:800;letter-spacing:.18em;color:var(--txt3)}
+.round-hdr .rcount{font-size:9px;color:var(--txt3);font-weight:400;display:block;margin-top:1px}
+
+/* MATCHUP CARD */
+.mu{padding:2px 3px}
+.mu-card{border-radius:5px;overflow:hidden;border:1px solid var(--bdr);background:var(--card);transition:border-color .2s}
+.mu-card.live-card{border-color:rgba(204,0,0,0.5);box-shadow:0 0 10px rgba(204,0,0,0.2);animation:livePulse 2s infinite}
+@keyframes livePulse{0%,100%{box-shadow:0 0 8px rgba(204,0,0,0.2)}50%{box-shadow:0 0 18px rgba(204,0,0,0.45)}}
+.mu-card.final-card{border-color:rgba(34,170,68,0.3)}
+.mu-card.sched-card{border-color:var(--bdr)}
+.team-row{height:36px;display:flex;align-items:center;padding:0 8px;gap:6px;transition:background .1s}
+.team-row.win{background:var(--win-bg)}
+.team-row.lose{background:transparent;opacity:.55}
+.team-row.live-lead{background:rgba(204,0,0,0.12)}
+.team-row.neutral{background:transparent}
+.seed-badge{font-size:10px;font-weight:700;color:var(--txt3);min-width:18px;text-align:right;flex-shrink:0}
+.team-name{font-size:13px;font-weight:600;color:var(--txt2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team-row.win .team-name{color:var(--txt);font-weight:700}
+.team-score{font-size:13px;font-weight:700;color:var(--txt);flex-shrink:0;min-width:24px;text-align:right}
+.team-row.win .team-score{color:var(--green)}
+.team-row.live-lead .team-score{color:#ff8888}
+.team-tbd{font-size:11px;color:var(--txt3);font-style:italic}
+.mu-div{height:1px;background:var(--bdr)}
+.mu-status{padding:3px 8px;font-size:9px;font-weight:800;letter-spacing:.1em;display:flex;align-items:center;gap:5px;border-top:1px solid var(--bdr)}
+.mu-status.final{color:var(--green);background:rgba(34,170,68,0.07)}
+.mu-status.live{color:#ff4444;background:rgba(204,0,0,0.1);animation:pulse 1.5s infinite}
+.mu-status.sched{color:var(--txt3);background:transparent}
+.mu-status.tbd{color:var(--txt3);background:transparent}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#ff4444;flex-shrink:0;animation:pulse 1.5s infinite}
+
+/* CONNECTOR LINES (visual only) */
+.round-col{position:relative}
+
+/* REGION HEADER */
+.region-banner{display:flex;align-items:center;gap:12px;padding:14px 14px 4px}
+.region-name{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.1em;color:var(--txt)}
+.region-site{font-size:11px;color:var(--txt3);letter-spacing:.12em;margin-top:2px}
+.region-progress{margin-left:auto;text-align:right}
+.rp-val{font-size:20px;font-weight:700;color:var(--red);font-family:'Bebas Neue',sans-serif}
+.rp-lbl{font-size:9px;color:var(--txt3);letter-spacing:.12em}
+
+/* FINAL FOUR */
+.ff-page{padding:16px 14px 40px;max-width:900px;margin:0 auto}
+.ff-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.12em;color:var(--gold);margin-bottom:4px}
+.ff-sub{font-size:11px;color:var(--txt3);letter-spacing:.14em;margin-bottom:20px}
+.ff-layout{display:grid;grid-template-columns:1fr 60px 1fr;gap:16px;align-items:start;margin-bottom:24px}
+.ff-arrow{text-align:center;padding-top:40px;font-size:28px;color:var(--red);opacity:.5}
+.sf-card{background:var(--card);border:1px solid var(--bdr2);border-radius:8px;overflow:hidden}
+.sf-hdr{background:var(--bg3);padding:8px 14px;font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--txt3);border-bottom:1px solid var(--bdr)}
+.sf-team{padding:13px 14px;display:flex;align-items:center;gap:10px;border-left:4px solid transparent;transition:all .15s}
+.sf-team.adv{background:var(--win-bg);border-left-color:var(--green)}
+.sf-team.tbd-team{opacity:.5}
+.sf-seed{font-size:12px;font-weight:700;color:var(--txt3);min-width:22px}
+.sf-nm{font-size:17px;font-weight:600;color:var(--txt2);flex:1}
+.sf-team.adv .sf-nm{color:var(--txt);font-weight:700}
+.sf-score{font-size:13px;font-weight:700;color:var(--green)}
+.sf-tbd{font-size:13px;color:var(--txt3);font-style:italic;padding:13px 14px}
+.champ-box{background:linear-gradient(135deg,#1a1000,#0d0800);border:2px solid var(--gold);border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(240,180,41,.2);max-width:320px;margin:0 auto}
+.champ-hdr{background:rgba(240,180,41,0.12);padding:11px 16px;text-align:center;font-size:11px;font-weight:800;letter-spacing:.2em;color:var(--gold);border-bottom:1px solid rgba(240,180,41,.2)}
+.champ-team{padding:16px 18px;display:flex;align-items:center;gap:10px}
+.champ-team.win{background:rgba(240,180,41,.08)}
+.champ-seed{font-size:12px;color:#555;font-weight:700;min-width:22px}
+.champ-nm{font-size:22px;font-weight:700;color:#888;flex:1}
+.champ-team.win .champ-nm{color:var(--gold)}
+.champ-crown{font-size:18px}
+.champ-tbd{font-size:14px;color:#333;font-style:italic;padding:16px 18px}
+
+/* STATUS BAR */
+.status-bar{background:var(--bg2);border-top:1px solid var(--bdr);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--txt3);font-family:'Inter',sans-serif}
+.last-update{color:var(--txt3)}
+.live-count{color:#44dd44;font-weight:600}
+
+@media(max-width:600px){.ff-layout{grid-template-columns:1fr}.ff-arrow{transform:rotate(90deg);padding-top:0}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <div>
+      <div class="logo"><span>MARCH</span> MADNESS 2026</div>
+      <div class="logo-sub">NCAA TOURNAMENT LIVE SCORES &amp; BRACKET</div>
+    </div>
+    <div class="hdr-right">
+      <div class="tog">
+        <button class="tog-btn on" id="tog-m" onclick="setGender('men')">MEN'S</button>
+        <button class="tog-btn off" id="tog-w" onclick="setGender('women')">WOMEN'S</button>
+      </div>
+      <div class="refresh-badge auto" id="refresh-badge"><div class="rdot" id="rdot"></div><span id="refresh-lbl">AUTO</span></div>
+      <button class="refresh-btn" onclick="refreshNow()">&#8635; REFRESH</button>
+      <div class="countdown" id="countdown"></div>
+    </div>
+  </div>
+</div>
+
+<div class="score-bar" id="score-bar">
+  <div class="sb-lbl">TODAY</div>
+  <div class="sb-game"><span class="sb-sched">Loading scores...</span></div>
+</div>
+
+<div class="tabs" id="tabs-bar"></div>
+
+<div id="content-area"></div>
+
+<div class="status-bar">
+  <div class="last-update">Last updated: <span id="last-update-time">—</span></div>
+  <div id="live-count-lbl"></div>
+</div>
+
+<script>
+// ============================================================
+// BRACKET DATA — Men's (Mar 22, 2026)
+// ============================================================
+const MENS = {
+  East:{
+    site:'Washington, D.C.',
+    r1:[
+      {t1:{s:1,n:'Duke'},    t2:{s:16,n:'Siena'},        hs:71,as:65,w:'Duke',        st:'final'},
+      {t1:{s:9,n:'TCU'},     t2:{s:8,n:'Ohio State'},    hs:66,as:64,w:'TCU',         st:'final'},
+      {t1:{s:5,n:"St. John's"},t2:{s:12,n:'N. Iowa'},    hs:77,as:53,w:"St. John's",  st:'final'},
+      {t1:{s:4,n:'Kansas'},  t2:{s:13,n:'Cal Baptist'},  hs:68,as:60,w:'Kansas',      st:'final'},
+      {t1:{s:6,n:'Louisville'},t2:{s:11,n:'S. Florida'}, hs:83,as:79,w:'Louisville',  st:'final'},
+      {t1:{s:3,n:'Michigan St.'},t2:{s:14,n:'N. Dakota St.'},hs:92,as:67,w:'Michigan St.',st:'final'},
+      {t1:{s:7,n:'UCLA'},    t2:{s:10,n:'UCF'},           hs:75,as:71,w:'UCLA',        st:'final'},
+      {t1:{s:2,n:'UConn'},   t2:{s:15,n:'Furman'},        hs:82,as:71,w:'UConn',       st:'final'},
+    ],
+    r2:[
+      {t1:{s:1,n:'Duke'},       t2:{s:9,n:'TCU'},        hs:81,as:58,w:'Duke',       st:'final'},
+      {t1:{s:5,n:"St. John's"},t2:{s:4,n:'Kansas'},      hs:0, as:0, w:null,         st:'sched',time:'5:15 PM ET'},
+      {t1:{s:3,n:'Michigan St.'},t2:{s:6,n:'Louisville'},hs:77,as:69,w:'Michigan St.',st:'final'},
+      {t1:{s:2,n:'UConn'},      t2:{s:7,n:'UCLA'},       hs:0, as:0, w:null,         st:'sched',time:'8:45 PM ET'},
+    ],
+    s16:[], e8:[]
+  },
+  West:{
+    site:'San Diego, CA',
+    r1:[
+      {t1:{s:1,n:'Arizona'},  t2:{s:16,n:'LIU'},        hs:92,as:58,w:'Arizona',   st:'final'},
+      {t1:{s:9,n:'Utah State'},t2:{s:8,n:'Villanova'},  hs:86,as:76,w:'Utah State',st:'final'},
+      {t1:{s:5,n:'Texas Tech'},t2:{s:12,n:'Akron'},     hs:91,as:71,w:'Texas Tech',st:'final'},
+      {t1:{s:4,n:'Nebraska'}, t2:{s:13,n:'Creighton'}, hs:74,as:61,w:'Nebraska',  st:'final'},
+      {t1:{s:11,n:'Texas'},   t2:{s:6,n:'BYU'},         hs:74,as:68,w:'Texas',     st:'final'},
+      {t1:{s:3,n:'Gonzaga'},  t2:{s:14,n:'Kennesaw St.'},hs:88,as:59,w:'Gonzaga',  st:'final'},
+      {t1:{s:7,n:'Miami FL'}, t2:{s:10,n:'Missouri'},   hs:80,as:66,w:'Miami FL',  st:'final'},
+      {t1:{s:2,n:'Purdue'},   t2:{s:15,n:'Queens'},     hs:104,as:71,w:'Purdue',   st:'final'},
+    ],
+    r2:[
+      {t1:{s:1,n:'Arizona'},  t2:{s:9,n:'Utah State'}, hs:0,as:0,w:null,       st:'sched',time:'7:50 PM ET'},
+      {t1:{s:5,n:'Texas Tech'},t2:{s:4,n:'Nebraska'},  hs:0,as:0,w:null,       st:'sched',time:'9:45 PM ET'},
+      {t1:{s:11,n:'Texas'},   t2:{s:3,n:'Gonzaga'},    hs:74,as:68,w:'Texas',  st:'final'},
+      {t1:{s:7,n:'Miami FL'}, t2:{s:2,n:'Purdue'},     hs:0,as:0,w:null,       st:'sched',time:'12:10 PM ET'},
+    ],
+    s16:[], e8:[]
+  },
+  South:{
+    site:'Memphis, TN',
+    r1:[
+      {t1:{s:1,n:'Florida'},  t2:{s:16,n:'Lehigh'},      hs:89,as:62,w:'Florida',   st:'final'},
+      {t1:{s:9,n:'Iowa'},     t2:{s:8,n:'Illinois St.'}, hs:77,as:64,w:'Iowa',      st:'final'},
+      {t1:{s:5,n:'Dayton'},   t2:{s:12,n:'UNC Wilmington'},hs:74,as:58,w:'Dayton',  st:'final'},
+      {t1:{s:4,n:'Arkansas'}, t2:{s:13,n:'High Point'},  hs:84,as:76,w:'Arkansas',  st:'final'},
+      {t1:{s:6,n:'Nevada'},   t2:{s:11,n:'Liberty'},     hs:73,as:63,w:'Nevada',    st:'final'},
+      {t1:{s:3,n:'Illinois'}, t2:{s:14,n:'VCU'},         hs:76,as:55,w:'Illinois',  st:'final'},
+      {t1:{s:7,n:'Iowa State'},t2:{s:10,n:'Texas A&M'},  hs:88,as:57,w:'Iowa State',st:'final'},
+      {t1:{s:2,n:'Houston'},  t2:{s:15,n:'N. Kentucky'}, hs:91,as:65,w:'Houston',   st:'final'},
+    ],
+    r2:[
+      {t1:{s:1,n:'Florida'},  t2:{s:9,n:'Iowa'},       hs:0,as:0,w:null,          st:'sched',time:'7:10 PM ET'},
+      {t1:{s:5,n:'Dayton'},   t2:{s:4,n:'Arkansas'},   hs:80,as:61,w:'Dayton',    st:'final'},
+      {t1:{s:6,n:'Nevada'},   t2:{s:3,n:'Illinois'},   hs:73,as:63,w:'Nevada',    st:'final'},
+      {t1:{s:7,n:'Iowa State'},t2:{s:2,n:'Houston'},   hs:88,as:57,w:'Iowa State',st:'final'},
+    ],
+    s16:[], e8:[]
+  },
+  Midwest:{
+    site:'Indianapolis, IN',
+    r1:[
+      {t1:{s:1,n:'Michigan'}, t2:{s:16,n:'Howard'},      hs:87,as:62,w:'Michigan',  st:'final'},
+      {t1:{s:9,n:'Saint Louis'},t2:{s:8,n:'Georgia'},    hs:72,as:64,w:'Saint Louis',st:'final'},
+      {t1:{s:5,n:'Texas Tech'},t2:{s:12,n:'Drake'},      hs:78,as:66,w:'Texas Tech',st:'final'},
+      {t1:{s:4,n:'Alabama'},   t2:{s:13,n:'Troy'},       hs:90,as:68,w:'Alabama',   st:'final'},
+      {t1:{s:6,n:'Tennessee'}, t2:{s:11,n:'Miami OH'},   hs:84,as:71,w:'Tennessee', st:'final'},
+      {t1:{s:3,n:'Virginia'},  t2:{s:14,n:'Colgate'},    hs:77,as:58,w:'Virginia',  st:'final'},
+      {t1:{s:7,n:'Kentucky'},  t2:{s:10,n:'New Mexico'}, hs:79,as:72,w:'Kentucky',  st:'final'},
+      {t1:{s:2,n:'Iowa State'},t2:{s:15,n:'Vermont'},    hs:88,as:61,w:'Iowa State',st:'final'},
+    ],
+    r2:[
+      {t1:{s:1,n:'Michigan'}, t2:{s:9,n:'Saint Louis'}, hs:95,as:72,w:'Michigan',  st:'final'},
+      {t1:{s:5,n:'Texas Tech'},t2:{s:4,n:'Alabama'},     hs:0,as:0,w:null,          st:'sched',time:'9:45 PM ET'},
+      {t1:{s:6,n:'Tennessee'},t2:{s:3,n:'Virginia'},     hs:0,as:0,w:null,          st:'sched',time:'6:10 PM ET'},
+      {t1:{s:7,n:'Kentucky'}, t2:{s:2,n:'Iowa State'},   hs:0,as:0,w:null,          st:'sched',time:'2:45 PM ET'},
+    ],
+    s16:[], e8:[]
+  }
+};
+
+// ============================================================
+// WOMEN'S DATA (Mar 22, 2026)
+// ============================================================
+const WOMENS = {
+  'FW·UConn':{
+    site:"Fort Worth, TX — Regional 1",
+    r1:[
+      {t1:{s:1,n:'UConn'},     t2:{s:16,n:'UTSA'},        hs:90,as:52,w:'UConn',      st:'final'},
+      {t1:{s:9,n:'Syracuse'},  t2:{s:8,n:'Iowa State'},   hs:72,as:63,w:'Syracuse',   st:'final'},
+      {t1:{s:5,n:'Maryland'},  t2:{s:12,n:'Murray State'},hs:78,as:62,w:'Maryland',   st:'final'},
+      {t1:{s:4,n:'N. Carolina'},t2:{s:13,n:'W. Illinois'},hs:81,as:64,w:'N. Carolina',st:'final'},
+      {t1:{s:6,n:'Notre Dame'},t2:{s:11,n:'Virginia'},    hs:79,as:60,w:'Notre Dame', st:'final'},
+      {t1:{s:3,n:'Ohio State'},t2:{s:14,n:'Villanova'},   hs:75,as:54,w:'Ohio State', st:'final'},
+      {t1:{s:7,n:'Kansas State'},t2:{s:10,n:'Gonzaga'},   hs:71,as:65,w:'Kansas State',st:'final'},
+      {t1:{s:2,n:'Vanderbilt'},t2:{s:15,n:'High Point'},  hs:102,as:61,w:'Vanderbilt',st:'final'},
+    ],
+    r2:[
+      {t1:{s:1,n:'UConn'},     t2:{s:9,n:'Syracuse'},    hs:0,as:0,w:null,st:'sched',time:'Mon 6:00 PM ET'},
+      {t1:{s:5,n:'Maryland'},  t2:{s:4,n:'N. Carolina'}, hs:0,as:0,w:null,st:'sched',time:'Mon TBD'},
+      {t1:{s:3,n:'Ohio State'},t2:{s:6,n:'Notre Dame'},  hs:0,as:0,w:null,st:'sched',time:'Mon 4:00 PM ET'},
+      {t1:{s:2,n:'Vanderbilt'},t2:{s:7,n:'Kansas State'},hs:0,as:0,w:null,st:'sched',time:'Mon 7:00 PM ET'},
+    ],
+    s16:[], e8:[]
+  },
+  'Sac·UCLA':{
+    site:"Sacramento, CA — Regional 2",
+    r1:[
+      {t1:{s:1,n:'UCLA'},      t2:{s:16,n:'Cal Baptist'}, hs:96,as:43,w:'UCLA',       st:'final'},
+      {t1:{s:9,n:'Tennessee'}, t2:{s:8,n:'Arizona St.'}, hs:77,as:65,w:'Tennessee',  st:'final'},
+      {t1:{s:5,n:'NC State'},  t2:{s:12,n:'UC San Diego'},hs:74,as:68,w:'NC State',   st:'final'},
+      {t1:{s:4,n:'Minnesota'}, t2:{s:13,n:'Vermont'},     hs:83,as:71,w:'Minnesota',  st:'final'},
+      {t1:{s:6,n:'Alabama'},   t2:{s:11,n:'USC'},         hs:68,as:55,w:'Alabama',    st:'final'},
+      {t1:{s:3,n:'Duke'},      t2:{s:14,n:'C. Charleston'},hs:79,as:65,w:'Duke',      st:'final'},
+      {t1:{s:7,n:'Virginia Tech'},t2:{s:10,n:'Oregon'},   hs:74,as:69,w:'Virginia Tech',st:'final'},
+      {t1:{s:2,n:'LSU'},       t2:{s:15,n:'Lamar'},       hs:88,as:61,w:'LSU',        st:'final'},
+    ],
+    r2:[
+      {t1:{s:1,n:'UCLA'},      t2:{s:9,n:'Tennessee'},   hs:0,as:0,w:null,st:'sched',time:'Sun TBD'},
+      {t1:{s:5,n:'NC State'},  t2:{s:4,n:'Minnesota'},   hs:0,as:0,w:null,st:'sched',time:'Sun 1:00 PM ET'},
+      {t1:{s:6,n:'Alabama'},   t2:{s:3,n:'Duke'},        hs:0,as:0,w:null,st:'sched',time:'Sun 4:00 PM ET'},
+      {t1:{s:2,n:'LSU'},       t2:{s:7,n:'Virginia Tech'},hs:0,as:0,w:null,st:'sched',time:'Sun 3:00 PM ET'},
+    ],
+    s16:[], e8:[]
+  },
+  'FW·Texas':{
+    site:"Fort Worth, TX — Regional 3",
+    r1:[
+      {t1:{s:1,n:'Texas'},     t2:{s:16,n:'Mo. State'},   hs:98,as:55,w:'Texas',      st:'final'},
+      {t1:{s:9,n:'Arkansas'},  t2:{s:8,n:'Baylor'},       hs:77,as:73,w:'Arkansas',   st:'final'},
+      {t1:{s:5,n:'Georgia'},   t2:{s:12,n:'Idaho'},       hs:82,as:67,w:'Georgia',    st:'final'},
+      {t1:{s:4,n:'Oklahoma St.'},t2:{s:13,n:'UIC'},       hs:82,as:68,w:'Oklahoma St.',st:'final'},
+      {t1:{s:6,n:'Kentucky'},  t2:{s:11,n:'Florida St.'}, hs:71,as:56,w:'Kentucky',   st:'final'},
+      {t1:{s:3,n:'Louisville'},t2:{s:14,n:'Sacred Heart'},hs:72,as:52,w:'Louisville', st:'final'},
+      {t1:{s:7,n:'Kansas'},    t2:{s:10,n:'Illinois'},    hs:79,as:74,w:'Kansas',     st:'final'},
+      {t1:{s:2,n:'Michigan'},  t2:{s:15,n:'W. Kentucky'}, hs:77,as:61,w:'Michigan',   st:'final'},
+    ],
+    r2:[
+      {t1:{s:1,n:'Texas'},     t2:{s:9,n:'Arkansas'},    hs:0,as:0,w:null,st:'sched',time:'Sun 6:00 PM ET'},
+      {t1:{s:5,n:'Georgia'},   t2:{s:4,n:'Oklahoma St.'},hs:0,as:0,w:null,st:'sched',time:'Sun TBD'},
+      {t1:{s:6,n:'Kentucky'},  t2:{s:3,n:'Louisville'},  hs:0,as:0,w:null,st:'sched',time:'Sun TBD'},
+      {t1:{s:7,n:'Kansas'},    t2:{s:2,n:'Michigan'},    hs:0,as:0,w:null,st:'sched',time:'Sun TBD'},
+    ],
+    s16:[], e8:[]
+  },
+  'Sac·S.Car':{
+    site:"Sacramento, CA — Regional 4",
+    r1:[
+      {t1:{s:1,n:'S. Carolina'},t2:{s:16,n:'Lipscomb'},   hs:103,as:34,w:'S. Carolina',st:'final'},
+      {t1:{s:9,n:'Arizona'},   t2:{s:8,n:'Indiana'},      hs:77,as:71,w:'Arizona',    st:'final'},
+      {t1:{s:5,n:'W. Virginia'},t2:{s:12,n:'Miami OH'},   hs:82,as:54,w:'W. Virginia',st:'final'},
+      {t1:{s:4,n:'Oklahoma'},  t2:{s:13,n:'Fairfield'},   hs:81,as:65,w:'Oklahoma',   st:'final'},
+      {t1:{s:6,n:'Stanford'},  t2:{s:11,n:'Nebraska'},    hs:79,as:68,w:'Stanford',   st:'final'},
+      {t1:{s:3,n:'TCU'},       t2:{s:14,n:'WI-Green Bay'},hs:88,as:72,w:'TCU',        st:'final'},
+      {t1:{s:7,n:'North Texas'},t2:{s:10,n:'Florida'},    hs:74,as:71,w:'North Texas',st:'final'},
+      {t1:{s:2,n:'Iowa'},      t2:{s:15,n:'Colgate'},     hs:58,as:48,w:'Iowa',       st:'final'},
+    ],
+    r2:[
+      {t1:{s:1,n:'S. Carolina'},t2:{s:9,n:'Arizona'},    hs:0,as:0,w:null,st:'sched',time:'Mon 1:00 PM ET'},
+      {t1:{s:5,n:'W. Virginia'},t2:{s:4,n:'Oklahoma'},   hs:0,as:0,w:null,st:'sched',time:'Mon 5:00 PM ET'},
+      {t1:{s:6,n:'Stanford'},  t2:{s:3,n:'TCU'},         hs:0,as:0,w:null,st:'sched',time:'Mon TBD'},
+      {t1:{s:7,n:'North Texas'},t2:{s:2,n:'Iowa'},       hs:0,as:0,w:null,st:'sched',time:'Mon TBD'},
+    ],
+    s16:[], e8:[]
+  }
+};
+
+// ============================================================
+// APP STATE
+// ============================================================
+let gender = 'men';
+let activeTab = 'East';
+let refreshTimer = null;
+let countdownTimer = null;
+let nextRefreshAt = null;
+let lastUpdate = null;
+let liveGames = 0;
+
+// ============================================================
+// GAME HOURS CHECK
+// ============================================================
+function isGameHours(){
+  // Convert current time to ET (UTC-4 during EDT / UTC-5 during EST)
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const etOffset = -4; // EDT (March = daylight saving active)
+  const etHour = new Date(utc + etOffset * 3600000).getHours();
+  return etHour >= 11 && etHour < 24; // 11am–midnight ET
+}
+
+function refreshInterval(){
+  return isGameHours() ? 30000 : 300000; // 30s during games, 5min off-hours
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function getRegions(){
+  return gender==='men' ? Object.keys(MENS) : Object.keys(WOMENS);
+}
+
+function getBracket(){
+  return gender==='men' ? MENS : WOMENS;
+}
+
+function renderTabs(){
+  const regions = getRegions();
+  const bar = document.getElementById('tabs-bar');
+  let html = regions.map(r=>{
+    const rd = getBracket()[r];
+    const r2done = (rd.r2||[]).filter(g=>g.st==='final').length;
+    const r2total = (rd.r2||[]).length;
+    const r1done = (rd.r1||[]).filter(g=>g.st==='final').length;
+    let badge = '';
+    if(r2done > 0 && r2done < r2total) badge = `<span class="tab-badge">R2: ${r2done}/${r2total}</span>`;
+    else if(r2done === r2total && r2total > 0) badge = `<span class="tab-badge" style="color:#44cc66">R2 ✓</span>`;
+    else if(r1done === 8) badge = `<span class="tab-badge">R1 ✓</span>`;
+    const displayName = r.replace(/[·]/g,'').replace(/^\s+|\s+$/g,'').replace('FW','FW·').replace('Sac','Sac·') || r;
+    return `<div class="tab${r===activeTab?' on':''}" onclick="setTab('${r}')">${r.toUpperCase()} ${badge}</div>`;
+  }).join('');
+  html += `<div class="tab${activeTab==='finalfour'?' on':''}" onclick="setTab('finalfour')">🏆 FINAL FOUR</div>`;
+  bar.innerHTML = html;
+}
+
+function setTab(t){
+  activeTab = t;
+  renderTabs();
+  renderContent();
+}
+
+function setGender(g){
+  gender = g;
+  activeTab = getRegions()[0];
+  document.getElementById('tog-m').className='tog-btn '+(g==='men'?'on':'off');
+  document.getElementById('tog-w').className='tog-btn '+(g==='women'?'on':'off');
+  renderTabs();
+  renderContent();
+}
+
+// ============================================================
+// MATCHUP CARD HTML
+// ============================================================
+function muCard(game, ri){
+  if(!game) return `<div class="mu"><div class="mu-card sched-card"><div class="team-row neutral"><span class="team-tbd">TBD</span></div><div class="mu-div"></div><div class="team-row neutral"><span class="team-tbd">TBD</span></div></div></div>`;
+
+  const {t1,t2,hs,as,w,st,time} = game;
+  const isFinal = st==='final';
+  const isLive  = st==='live';
+  const isSched = st==='sched'||st==='tbd'||(!hs&&!w);
+
+  const w1 = isFinal && w===t1.n;
+  const w2 = isFinal && w===t2.n;
+  const l1 = isFinal && !w1;
+  const l2 = isFinal && !w2;
+  const lead1 = isLive && hs > as;
+  const lead2 = isLive && as > hs;
+
+  const cls1 = w1?'win':l1?'lose':lead1?'live-lead':'neutral';
+  const cls2 = w2?'win':l2?'lose':lead2?'live-lead':'neutral';
+  const cardCls = isLive?'live-card':isFinal?'final-card':'sched-card';
+
+  function teamRow(t, hs_, cls_){
+    const scoreHtml = (isFinal||isLive) && hs_!==undefined && hs_!==null && hs_!==0
+      ? `<span class="team-score">${hs_}</span>` : '';
+    return `<div class="team-row ${cls_}">
+      <span class="seed-badge">${t.s}</span>
+      <span class="team-name">${t.n}</span>
+      ${scoreHtml}
+    </div>`;
+  }
+
+  let statusHtml = '';
+  if(isLive) statusHtml=`<div class="mu-status live"><div class="live-dot"></div>LIVE &middot; ${game.period||''}</div>`;
+  else if(isFinal) statusHtml=`<div class="mu-status final">&#10003; FINAL</div>`;
+  else statusHtml=`<div class="mu-status sched">${time||'TBD'}</div>`;
+
+  return `<div class="mu"><div class="mu-card ${cardCls}">
+    ${teamRow(t1,hs,cls1)}
+    <div class="mu-div"></div>
+    ${teamRow(t2,as,cls2)}
+    ${statusHtml}
+  </div></div>`;
+}
+
+// ============================================================
+// BRACKET RENDER
+// ============================================================
+function renderRegion(regionKey){
+  const rd = getBracket()[regionKey];
+  const r1 = rd.r1||[], r2 = rd.r2||[], s16 = rd.s16||[], e8 = rd.e8||[];
+  const r1done = r1.filter(g=>g.st==='final').length;
+  const r2done = r2.filter(g=>g.st==='final').length;
+
+  const roundDef = [
+    {lbl:'ROUND 1',sub:`${r1done}/${r1.length} final`,games:r1,n:8},
+    {lbl:'ROUND 2',sub:`${r2done}/${r2.length} final`,games:r2,n:4},
+    {lbl:'SWEET 16',sub:'',games:s16,n:2},
+    {lbl:'ELITE 8',sub:'',games:e8,n:1},
+  ];
+  const BASE = 110;
+
+  const cols = roundDef.map((rd2,ri)=>{
+    const h = BASE * Math.pow(2, ri);
+    const slots = Array.from({length:rd2.n}).map((_,mi)=>{
+      const g = rd2.games[mi]||null;
+      return `<div style="min-height:${h}px;display:flex;flex-direction:column;justify-content:center;padding:2px 0">${muCard(g,ri)}</div>`;
+    }).join('');
+    return `<div class="round-col">
+      <div class="round-hdr">${rd2.lbl}<span class="rcount">${rd2.sub}</span></div>
+      ${slots}
+    </div>`;
+  }).join('');
+
+  return `<div class="region-banner">
+    <div>
+      <div class="region-name">${regionKey.replace('·',' · ')}</div>
+      <div class="region-site">${rd.site||''}</div>
+    </div>
+    <div class="region-progress">
+      <div class="rp-val">${r1done+r2done}</div>
+      <div class="rp-lbl">GAMES FINAL</div>
+    </div>
+  </div>
+  <div class="bracket-page"><div class="bracket-cols">${cols}</div></div>`;
+}
+
+function renderFinalFour(){
+  const isMen = gender==='men';
+  const regions = Object.keys(isMen?MENS:WOMENS);
+
+  // E8 winners feed Final Four
+  function e8W(r){ return ((isMen?MENS:WOMENS)[r]?.e8||[])[0]?.w||null; }
+  function e8T(r){
+    const w=e8W(r);
+    const rd=(isMen?MENS:WOMENS)[r];
+    const e=rd?.e8?.[0];
+    if(!e) return null;
+    if(w===e.t1.n) return e.t1;
+    if(w===e.t2.n) return e.t2;
+    return null;
+  }
+
+  const pairs = isMen
+    ? [[regions[0],regions[3]],[regions[1],regions[2]]]
+    : [[regions[0],regions[3]],[regions[1],regions[2]]];
+
+  function sfCard(pair,idx){
+    const t1=e8T(pair[0]),t2=e8T(pair[1]);
+    function sfRow(t,adv){
+      if(!t) return `<div class="sf-tbd">Awaiting ${pair[idx?1:0]} Elite 8</div>`;
+      return `<div class="sf-team${adv?' adv':''}">
+        <span class="sf-seed">#${t.s}</span>
+        <span class="sf-nm">${t.n}</span>
+      </div>`;
+    }
+    return `<div class="sf-card">
+      <div class="sf-hdr">SEMIFINAL ${idx+1} &mdash; ${pair[0].replace('·',' · ')} vs ${pair[1].replace('·',' · ')}</div>
+      ${sfRow(t1,false)}<div class="mu-div"></div>${sfRow(t2,false)}
+    </div>`;
+  }
+
+  return `<div class="ff-page">
+    <div class="ff-title">&#127942; FINAL FOUR</div>
+    <div class="ff-sub">${isMen?'LUCAS OIL STADIUM · INDIANAPOLIS · APRIL 4 & 6':'MORTGAGE MATCHUP CENTER · PHOENIX · APRIL 3 & 5'}</div>
+    <div class="ff-layout">
+      <div style="display:flex;flex-direction:column;gap:14px">${sfCard(pairs[0],0)}${sfCard(pairs[1],1)}</div>
+      <div class="ff-arrow">&#8594;</div>
+      <div class="champ-box">
+        <div class="champ-hdr">&#127942; NATIONAL CHAMPION</div>
+        <div class="champ-tbd">Final Four to be determined — Elite 8 is Apr 28–29</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderContent(){
+  const el=document.getElementById('content-area');
+  if(activeTab==='finalfour'){ el.innerHTML=renderFinalFour(); return; }
+  el.innerHTML = renderRegion(activeTab);
+}
+
+// ============================================================
+// SCORE BAR
+// ============================================================
+function renderScoreBar(games){
+  const bar = document.getElementById('score-bar');
+  if(!games||!games.length){
+    bar.innerHTML=`<div class="sb-lbl">NCAA</div><div class="sb-game"><span class="sb-sched">Fetching live scores...</span></div>`;
+    return;
+  }
+  const live  = games.filter(g=>g.st==='live');
+  const fin   = games.filter(g=>g.st==='final');
+  const sched = games.filter(g=>g.st==='sched');
+  // Sort: live → final → scheduled
+  const all = [...live, ...fin, ...sched];
+  bar.innerHTML = `<div class="sb-lbl">${live.length?'🔴 LIVE':'NCAA'}</div>` + all.map(g=>{
+    const isFin  = g.st==='final';
+    const isLive = g.st==='live';
+    const isSched= g.st==='sched';
+    const w1 = isFin && g.w===g.t1.n;
+    const w2 = isFin && g.w===g.t2.n;
+    const prefix = isLive  ? `<span class="sb-live-dot">●</span>` :
+                   isFin   ? `<span class="sb-fin">FINAL</span>` : '';
+    const score  = (isLive||isFin) && (g.hs||g.as) ? `<span class="sb-score">${g.hs}–${g.as}</span>` : '';
+    const timeStr= isSched && g.time ? `<span class="sb-sched">${g.time}</span>` : '';
+    return `<div class="sb-game">${prefix}<span class="sb-team${w1?' w':''}">${g.t1.n}</span>${score}<span class="sb-team${w2?' w':''}">${g.t2.n}</span>${timeStr}</div>`;
+  }).join('');
+}
+
+// ============================================================
+// AUTO-REFRESH via ESPN public scoreboard APIs — filtered to tournament teams only
+// ============================================================
+
+// Build a lookup set of all team names in our bracket data for filtering
+function buildTeamSet(){
+  const s = new Set();
+  [MENS, WOMENS].forEach(bracket=>{
+    Object.values(bracket).forEach(region=>{
+      ['r1','r2','s16','e8'].forEach(rnd=>{
+        (region[rnd]||[]).forEach(mu=>{
+          if(mu?.t1?.n) s.add(mu.t1.n.toLowerCase().replace(/[^a-z]/g,''));
+          if(mu?.t2?.n) s.add(mu.t2.n.toLowerCase().replace(/[^a-z]/g,''));
+        });
+      });
+    });
+  });
+  return s;
+}
+
+async function fetchLiveScores(){
+  const BASE = 'https://site.api.espn.com/apis/site/v2/sports/basketball';
+  // Fetch yesterday + today to catch late finishes
+  const d1 = new Date(); const d0 = new Date(d1-864e5);
+  const fmt = d => d.toISOString().slice(0,10).replace(/-/g,'');
+  const dates = [...new Set([fmt(d0), fmt(d1)])];
+
+  try{
+    const fetches = [];
+    dates.forEach(d=>{
+      fetches.push(fetch(`${BASE}/mens-college-basketball/scoreboard?limit=100&dates=${d}`).then(r=>r.json()).catch(()=>null));
+      fetches.push(fetch(`${BASE}/womens-college-basketball/scoreboard?limit=100&dates=${d}`).then(r=>r.json()).catch(()=>null));
+    });
+    const results = await Promise.all(fetches);
+    const teamSet = buildTeamSet();
+    const allGames = [];
+
+    results.forEach((data, i)=>{
+      const gdr = (i%2===0) ? 'men' : 'women';
+      if(!data?.events) return;
+      data.events.forEach(ev=>{
+        const c = ev.competitions?.[0];
+        if(!c) return;
+        const comp1 = c.competitors?.[0], comp2 = c.competitors?.[1];
+        if(!comp1||!comp2) return;
+        const n1 = comp1.team?.shortDisplayName || comp1.team?.displayName || '';
+        const n2 = comp2.team?.shortDisplayName  || comp2.team?.displayName  || '';
+        // Filter: only include games where at least one team matches our bracket
+        const k1 = n1.toLowerCase().replace(/[^a-z]/g,'');
+        const k2 = n2.toLowerCase().replace(/[^a-z]/g,'');
+        const inTourney = [...teamSet].some(t=> k1.includes(t)||t.includes(k1)||k2.includes(t)||t.includes(k2));
+        if(!inTourney) return;
+
+        const s1 = parseInt(comp1.score||0)||0;
+        const s2 = parseInt(comp2.score||0)||0;
+        const state    = c.status?.type?.state || 'pre';
+        const detail   = c.status?.type?.shortDetail || '';
+        const completed = !!c.status?.type?.completed;
+        const st = completed ? 'final' : state==='in' ? 'live' : 'sched';
+        const w  = completed ? (s1>s2 ? n1 : n2) : null;
+        allGames.push({t1:n1, t2:n2, s1, s2, st, w, gdr,
+          period: state==='in' ? detail : null,
+          time:  (!completed && state!=='in') ? detail : null
+        });
+      });
+    });
+
+    if(allGames.length){
+      processScoreUpdate(allGames);
+      lastUpdate = new Date();
+      document.getElementById('last-update-time').textContent = lastUpdate.toLocaleTimeString();
+    }
+  } catch(e){
+    console.warn('ESPN score fetch failed:', e.message);
+  }
+}
+
+function processScoreUpdate(arr){
+  if(!Array.isArray(arr)||!arr.length) return;
+  const menBar=[], womenBar=[];
+
+  arr.forEach(g=>{
+    const n1 = (g.t1||'').toLowerCase().replace(/[^a-z]/g,'');
+    const n2 = (g.t2||'').toLowerCase().replace(/[^a-z]/g,'');
+    const bracket = g.gdr==='women' ? WOMENS : MENS;
+
+    // Update matching game in bracket data
+    Object.values(bracket).forEach(region=>{
+      ['r1','r2','s16','e8'].forEach(rnd=>{
+        (region[rnd]||[]).forEach(mu=>{
+          if(!mu?.t1?.n||!mu?.t2?.n) return;
+          const m1 = mu.t1.n.toLowerCase().replace(/[^a-z]/g,'');
+          const m2 = mu.t2.n.toLowerCase().replace(/[^a-z]/g,'');
+          const fwd  = (n1.includes(m1)||m1.includes(n1)) && (n2.includes(m2)||m2.includes(n2));
+          const flip = (n1.includes(m2)||m2.includes(n1)) && (n2.includes(m1)||m1.includes(n2));
+          if(!fwd && !flip) return;
+          mu.hs = fwd ? g.s1 : g.s2;
+          mu.as = fwd ? g.s2 : g.s1;
+          // Never downgrade: final stays final, live > sched, only upgrade status
+          if(g.st==='final' || (g.st==='live' && mu.st!=='final') || (g.st==='sched' && mu.st!=='final' && mu.st!=='live')){
+            mu.st = g.st;
+          }
+          if(g.period) mu.period = g.period;
+          if(g.time && mu.st!=='final') mu.time = g.time;
+          if(g.st==='final') mu.w = mu.hs > mu.as ? mu.t1.n : mu.t2.n;
+        });
+      });
+    });
+
+    const entry = {t1:{n:g.t1}, t2:{n:g.t2}, hs:g.s1||0, as:g.s2||0, st:g.st, time:g.time, period:g.period, w:g.w};
+    if(g.gdr==='women') womenBar.push(entry); else menBar.push(entry);
+  });
+
+  // Score bar shows current gender's games
+  const barList = gender==='women' ? womenBar : menBar;
+  const liveCount = arr.filter(g=>g.st==='live').length;
+  document.getElementById('live-count-lbl').innerHTML = liveCount > 0
+    ? `<span style="color:#44dd44">● ${liveCount} LIVE</span>`
+    : `${menBar.filter(g=>g.st==='final').length + womenBar.filter(g=>g.st==='final').length} games final`;
+  if(barList.length) renderScoreBar(barList);
+  renderContent();
+  renderTabs(); // update round badges
+}
+
+// ============================================================
+// REFRESH SCHEDULER
+// ============================================================
+function scheduleRefresh(){
+  clearTimeout(refreshTimer);
+  const interval = refreshInterval();
+  nextRefreshAt = Date.now() + interval;
+  refreshTimer = setTimeout(()=>{ fetchLiveScores().then(scheduleRefresh); }, interval);
+
+  const badge = document.getElementById('refresh-badge');
+  const lbl   = document.getElementById('refresh-lbl');
+  const dot   = document.getElementById('rdot');
+  if(isGameHours()){
+    badge.className = 'refresh-badge auto';
+    badge.title = 'Game hours detected — scores refresh every 30 seconds automatically';
+    lbl.textContent = '⚡ LIVE · every 30s';
+    dot.style.display = 'block';
+  } else {
+    badge.className = 'refresh-badge offhrs';
+    badge.title = 'Outside game hours (11am–midnight ET) — scores check every 5 minutes to save resources. Click REFRESH anytime for instant update.';
+    lbl.textContent = '⏸ No games now · checks every 5m';
+    dot.style.display = 'none';
+  }
+}
+
+function startCountdown(){
+  clearInterval(countdownTimer);
+  countdownTimer=setInterval(()=>{
+    const el = document.getElementById('countdown');
+    if(!nextRefreshAt){ el.textContent=''; return; }
+    const ms  = Math.max(0, nextRefreshAt - Date.now());
+    const sec = Math.round(ms / 1000);
+    if(isGameHours()){
+      el.textContent = `Next refresh in ${sec}s`;
+    } else {
+      const min = Math.round(sec / 60);
+      el.textContent = min > 1 ? `Next check in ~${min}m` : `Checking soon...`;
+    }
+  }, 1000);
+}
+
+function refreshNow(){
+  clearTimeout(refreshTimer);
+  nextRefreshAt=null;
+  document.getElementById('countdown').textContent='Refreshing...';
+  fetchLiveScores().then(()=>{ scheduleRefresh(); startCountdown(); });
+}
+
+// ============================================================
+// SEED TODAY'S KNOWN SCORE BAR FROM STATIC DATA
+// ============================================================
+function seedScoreBar(){
+  const today=[];
+  Object.values(MENS).forEach(region=>{
+    ['r1','r2'].forEach(rnd=>{
+      (region[rnd]||[]).forEach(g=>{
+        if(g.st==='final'||g.st==='live'||g.st==='sched'){
+          today.push({t1:g.t1,t2:g.t2,hs:g.hs,as:g.as,st:g.st,time:g.time,w:g.w});
+        }
+      });
+    });
+  });
+  renderScoreBar(today);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded',()=>{
+  renderTabs();
+  renderContent();
+  seedScoreBar();
+  lastUpdate=new Date();
+  document.getElementById('last-update-time').textContent=lastUpdate.toLocaleTimeString();
+  fetchLiveScores();
+  scheduleRefresh();
+  startCountdown();
+});
+</script>
+</body>
+</html>
